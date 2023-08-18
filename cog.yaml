@@ -10,6 +10,7 @@ build:
     - "bitsandbytes==0.40.2"
     - "transformers==4.31.0"
     - "trl==0.4.7"
+    - "scipy==1.11.2"
 
   run:
     # For the first iteration, we'll load the model through HuggingFace.

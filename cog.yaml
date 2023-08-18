@@ -1,0 +1,19 @@
+build:
+  gpu: true
+  cuda: "11.4"
+  python_version: "3.11"
+  system_packages:
+
+  python_packages:
+    - "accelerate==0.21.0"
+    - "peft==0.4.0"
+    - "bitsandbytes==0.40.2"
+    - "transformers==4.31.0"
+    - "trl==0.4.7"
+
+  run:
+    # For the first iteration, we'll load the model through HuggingFace.
+    # - "pip install git+https://github.com/vana-com/lora"
+
+predict: "predict.py:Predictor"
+

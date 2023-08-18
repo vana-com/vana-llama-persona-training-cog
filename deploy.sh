@@ -2,10 +2,11 @@
 
 # Borrowed from vana-sdxl-training-cog
 
-# Check if vana-ai-utils-py directory already exists
-if [ -d "vana-ai-utils-py" ]; then
-  rm -rf vanautils
-fi
+# Disable this, vanautils/ is now part of this repo
+# # Check if vana-ai-utils-py directory already exists
+# if [ -d "vana-ai-utils-py" ]; then
+#   rm -rf vanautils
+# fi
 
 # Check if login flag is passed
 if [[ "$*" == *--login* ]]; then
@@ -24,7 +25,8 @@ fi
 #   exit 1
 # fi
 
-cp -r ../vana-ai-utils-py/vanautils .
+# Disable this, vanautils/ is now part of this repo
+# cp -r ../vana-ai-utils-py/vanautils .
 
 # Push to dev or prod
 if [[ "$*" == *--dev* ]]; then
@@ -32,7 +34,7 @@ if [[ "$*" == *--dev* ]]; then
     python ./scripts/setup.py
   fi
   # TODO: What's the point of dev and prod if they're both pushing to the same thing?
-  cog push r8.im/vana-com/vana-llm-experiment-1
+  cog push r8.im/vana-com/vana-llama-persona-training
 
   # TODO: Figure out whether we need to tag + push to git. Not sure why we did this in the first place.
   # if [ $? -eq 0 ]; then
@@ -56,14 +58,16 @@ if [[ "$*" == *--prod* ]]; then
   # Check if user entered the correct numbers
   if [ "$user_numbers" == "$random_numbers" ]; then
     python ./scripts/setup.py
-    cog push r8.im/vana-com/vana-llm-experiment-1
+    cog push r8.im/vana-com/vana-llama-persona-training
 
   else
     echo "Incorrect numbers. Deployment to prod aborted."
-    rm -rf vanautils
+    # Disable this, vanautils/ is now part of this repo
+    # rm -rf vanautils
     exit 1
   fi
 fi
 
-# Remove vana-ai-utils-py directory
-rm -rf vanautils
+# Disable this, vanautils/ is now part of this repo
+# # Remove vana-ai-utils-py directory
+# rm -rf vanautils

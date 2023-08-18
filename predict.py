@@ -80,7 +80,7 @@ class Predictor(BasePredictor):
         clean_directories([TRAINING_DIR, CHECKPOINT_DIR])
 
         [
-            self.file_manager.download_file(chat_url) for chat_url in json.loads(whatsapp_training_files_urls)
+            self.file_manager.download_file(chat_url, preserve_structure=False) for chat_url in json.loads(whatsapp_training_files_urls)
         ] if whatsapp_training_files_urls is not None else None
 
         if whatsapp_training_files is not None:
@@ -94,7 +94,7 @@ class Predictor(BasePredictor):
             no_overlap=True,
             final_format='replicate'
         )
-        train_file_name, validate_file_name, _ = processor.process_files(TRAINING_DIR)
+        train_file_name, validate_file_name, _ = processor.process_directory(TRAINING_DIR, TRAINING_DIR)
 
         params = {
             "new_model": new_model_name,
@@ -103,18 +103,14 @@ class Predictor(BasePredictor):
             "lora_r": lora_r,
             "lora_alpha": lora_alpha,
             "lora_dropout": lora_dropout,
-            "use_4bit": use_4bit,
-            "bnb_4bit_compute_dtype": bnb_4bit_compute_dtype,
-            "bnb_4bit_quant_type": bnb_4bit_quant_type,
-            "use_nested_quant": use_nested_quant,
             "output_dir": CHECKPOINT_DIR,
             "num_train_epochs": num_train_epochs,
             "fp16": fp16,
             "bf16": bf16,
             "per_device_train_batch_size": per_device_train_batch_size,
-            "per_device_eval_batch_size": per_device_eval_batch_size,
+            # "per_device_eval_batch_size": per_device_eval_batch_size,
             "gradient_accumulation_steps": gradient_accumulation_steps,
-            "gradient_checkpointing": gradient_checkpointing,
+            # "gradient_checkpointing": gradient_checkpointing,
             "max_grad_norm": max_grad_norm,
             "learning_rate": learning_rate,
             "weight_decay": weight_decay,
@@ -127,7 +123,6 @@ class Predictor(BasePredictor):
             "logging_steps": logging_steps,
             "max_seq_length": max_seq_length,
             "packing": packing,
-            "device_map": device_map,
         }
 
         logging.info("Training the model...")

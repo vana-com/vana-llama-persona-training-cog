@@ -52,12 +52,12 @@ class ChatDataProcessor:
 
         return json.dumps(example, ensure_ascii=False)
 
-    def process_directory(self, directory_path: str):
+    def process_directory(self, directory_path: str, output_dir: str):
         input_files = [os.path.join(directory_path, file) for file in os.listdir(
             directory_path) ] # For now, assume all files are valid # if file.endswith('.txt')]
-        return self.process_files(input_files)
+        return self.process_files(input_files, output_dir)
 
-    def process_files(self, input_files: List[str]):
+    def process_files(self, input_files: List[str], output_dir: str):
         all_lines = []
         for input_file in input_files:
             with open(input_file, "r", encoding="utf-8") as file:
@@ -70,7 +70,7 @@ class ChatDataProcessor:
             jsonl_lines = self.generate_jsonl_from_bundles(message_bundles)
             all_lines.extend(jsonl_lines)
 
-        return self.write_output_files(all_lines)
+        return self.write_output_files(all_lines, output_dir)
 
     def group_lines(self, raw_lines):
         lines = []
@@ -127,7 +127,7 @@ class ChatDataProcessor:
                 i += 1
         return jsonl_lines
 
-    def write_output_files(self, all_lines):
+    def write_output_files(self, all_lines, output_dir):
         random.shuffle(all_lines)
         current_time_millis = int(time.time() * 1000)
 
@@ -146,27 +146,27 @@ class ChatDataProcessor:
         test_file_name = f"test_{current_time_millis}{ext}" if self.test_split > 0 else None
 
         if self.final_format == 'colab':
-            self.write_jsonl_file(train_file_name, train_lines)
+            self.write_jsonl_file(train_file_name, train_lines, output_dir)
             if validate_lines is not None:
-                self.write_jsonl_file(validate_file_name, validate_lines)
+                self.write_jsonl_file(validate_file_name, validate_lines, output_dir)
             if test_lines:
-                self.write_jsonl_file(test_file_name, test_lines)
+                self.write_jsonl_file(test_file_name, test_lines, output_dir)
         else:  # 'replicate' format
-            self.write_json_file(train_file_name, train_lines)
+            self.write_json_file(train_file_name, train_lines, output_dir)
             if validate_lines is not None:
-                self.write_json_file(validate_file_name, validate_lines)
+                self.write_json_file(validate_file_name, validate_lines, output_dir)
             if test_lines:
-                self.write_json_file(test_file_name, test_lines)
+                self.write_json_file(test_file_name, test_lines, output_dir)
 
         return train_file_name, validate_file_name, test_file_name
 
-    def write_jsonl_file(self, output_file, lines):
-        with open(output_file, 'w', encoding='utf-8') as file:
+    def write_jsonl_file(self, output_file, lines, output_dir="."):
+        with open(os.path.join(output_dir, output_file), 'w', encoding='utf-8') as file:
             for line in lines:
                 file.write(line + '\n')
 
-    def write_json_file(self, output_file, lines):
-        with open(output_file, 'w', encoding='utf-8') as file:
+    def write_json_file(self, output_file, lines, output_dir="."):
+        with open(os.path.join(output_dir, output_file), 'w', encoding='utf-8') as file:
             file.write('[\n')
             file.write(',\n'.join(lines))
             file.write('\n]')

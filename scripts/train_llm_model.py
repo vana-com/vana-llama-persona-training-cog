@@ -1,3 +1,4 @@
+import logging
 import torch
 from datasets import load_dataset
 from transformers import (
@@ -5,15 +6,16 @@ from transformers import (
     AutoTokenizer,
     BitsAndBytesConfig,
     TrainingArguments,
-    logging,
 )
 from peft import LoraConfig
 from trl import SFTTrainer
 
-# TODO: Add logging
+logging.basicConfig(level=logging.INFO)
 
 class LLMTrainer:
     def __init__(self, model_name, use_4bit, bnb_4bit_compute_dtype, bnb_4bit_quant_type, use_nested_quant, device_map):
+        logging.info("Initializing the trainer with a model...")
+
         self.device_map = device_map
 
         # Load tokenizer and model with QLoRA configuration
@@ -30,9 +32,7 @@ class LLMTrainer:
         if compute_dtype == torch.float16 and use_4bit:
             major, _ = torch.cuda.get_device_capability()
             if major >= 8:
-                print("=" * 80)
-                print("Your GPU supports bfloat16: accelerate training with bf16=True")
-                print("=" * 80)
+                logging.info("The GPU supports bfloat16: accelerate training with bf16=True.")
 
         # Load base model
         # TODO don't download from HuggingFace
@@ -80,8 +80,12 @@ class LLMTrainer:
         max_seq_length,
         packing,
     ):
+        logging.info("Loading the training data...")
+
         # Preprocessing and Data Loading
         datasets = load_dataset("json", data_files={"train": train_path, "validation": validation_path})
+
+        logging.info("Configuring training...")
 
         # Load LoRA configuration
         peft_config = LoraConfig(
@@ -125,7 +129,13 @@ class LLMTrainer:
             args=training_arguments,
             packing=packing,
         )
+
+        logging.info("Starting training...")
+
         trainer.train()
+
+        logging.info("Training complete, saving the model...")
+
         trainer.model.save_pretrained(new_model)
 
         # I don't think we need to do this, if we just want to save the LoRA weights

@@ -1,4 +1,5 @@
 import gc
+import logging
 import torch
 import json
 import uuid
@@ -18,10 +19,12 @@ from scripts.process_chat_data import ChatDataProcessor
 
 TRAINING_DIR = "/tmp/vana-llm-training/training-data"
 CHECKPOINT_DIR = "/tmp/vana-llm-training/checkpoints"
-# TODO: Add logging
+
+logging.basicConfig(level=logging.INFO)
 
 class Predictor(BasePredictor):
     def setup(self):
+        logging.info("Setting up the Predictor...")
         self.file_manager = FileManager(download_dir=TRAINING_DIR)
         self.trainer = LLMTrainer(model_name, use_4bit, bnb_4bit_compute_dtype, bnb_4bit_quant_type, use_nested_quant, device_map)
 
@@ -63,11 +66,13 @@ class Predictor(BasePredictor):
         max_seq_length: int = Input(description="Maximum sequence length to use.", default=max_seq_length),
         packing: bool = Input(description="Pack multiple short examples in the same input sequence to increase efficiency.", default=packing),
     ) -> Path:
+        logging.info("Starting prediction process...")
         new_model_name = str(uuid.uuid4())
 
         # TODO: Safe to assume that this instance only processes one request at a time?
 
         if whatsapp_training_files is None and whatsapp_training_files_urls is None:
+            logging.info("Downloading files from URLs...")
             raise Exception('No training data provided')
 
         # seed = 0
@@ -79,8 +84,10 @@ class Predictor(BasePredictor):
         ] if whatsapp_training_files_urls is not None else None
 
         if whatsapp_training_files is not None:
+            logging.info("Extracting zipped files...")
             extract_zip_and_flatten(whatsapp_training_files, TRAINING_DIR)
 
+        logging.info("Processing chat data...")
         processor = ChatDataProcessor(
             train_split=0.9,
             filter_speaker=subject_name,
@@ -123,8 +130,10 @@ class Predictor(BasePredictor):
             "device_map": device_map,
         }
 
+        logging.info("Training the model...")
         self.trainer.train_llm_model(**params)
 
+        logging.info("Collecting garbage and emptying CUDA cache...")
         gc.collect()
         torch.cuda.empty_cache()
 
@@ -135,11 +144,13 @@ class Predictor(BasePredictor):
         latest_checkpoint_dir = max(checkpoint_dirs, key=lambda x: int(x.name.split('-')[-1]))
 
         # Collect the required files
+        logging.info(f"Collecting generated files from {latest_checkpoint_dir}...")
         output_files = [latest_checkpoint_dir / 'adapter_model.bin',
                         latest_checkpoint_dir / 'adapter_model.config']
 
         # Add any other required files here
 
+        logging.info("Prediction process completed.")
         return output_files
 
         # import zipfile

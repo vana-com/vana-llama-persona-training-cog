@@ -141,7 +141,7 @@ class Predictor(BasePredictor):
         # Collect the required files
         logging.info(f"Collecting generated files from {latest_checkpoint_dir}...")
         output_files = [latest_checkpoint_dir / 'adapter_model.bin',
-                        latest_checkpoint_dir / 'adapter_model.config']
+                        latest_checkpoint_dir / 'adapter_config.json']
 
         # Add any other required files here
 

@@ -35,7 +35,7 @@ class Predictor(BasePredictor):
             default=None
         ),
         whatsapp_training_files_urls: str = Input(
-            description="A list of URLs that can be used instead of a zip file. Do not use both.",
+            description="A list of URLs that can be used instead of a zip file, e.g., [\"https://example.com/dataset/whatsapp.txt\"] Do not use both.",
             default=None
         ),
         subject_name: str = Input(description="The name of the subject to match in whatsapp_training_files_urls."),
@@ -92,7 +92,7 @@ class Predictor(BasePredictor):
             train_split=0.9,
             filter_speaker=subject_name,
             no_overlap=True,
-            final_format='replicate'
+            final_format='colab'
         )
         train_file_name, validate_file_name, _ = processor.process_directory(TRAINING_DIR, TRAINING_DIR)
 

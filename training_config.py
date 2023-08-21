@@ -96,5 +96,6 @@ max_seq_length = None
 # Pack multiple short examples in the same input sequence to increase efficiency
 packing = False
 
-# Load the entire model on the GPU 0
-device_map = {"": 0}
+# # Load the entire model on the GPU 0
+# device_map = {"": 0}
+device_map = "auto"

@@ -1,5 +1,6 @@
 import gc
 import logging
+from typing import List
 import torch
 import json
 import uuid
@@ -65,7 +66,7 @@ class Predictor(BasePredictor):
         logging_steps: int = Input(description="Log every X updates steps.", default=logging_steps),
         max_seq_length: int = Input(description="Maximum sequence length to use.", default=max_seq_length),
         packing: bool = Input(description="Pack multiple short examples in the same input sequence to increase efficiency.", default=packing),
-    ) -> Path:
+    ) -> List[Path]:
         logging.info("Starting prediction process...")
         new_model_name = str(uuid.uuid4())
 

@@ -14,6 +14,7 @@ logging.basicConfig(level=logging.INFO)
 
 class LLMTrainer:
     def __init__(self, model_name, use_4bit, bnb_4bit_compute_dtype, bnb_4bit_quant_type, use_nested_quant, device_map):
+        self.default_model_name = model_name
         logging.info("Initializing the trainer with a model...")
 
         self.device_map = device_map
@@ -21,7 +22,7 @@ class LLMTrainer:
         # Load tokenizer and model with QLoRA configuration
         compute_dtype = getattr(torch, bnb_4bit_compute_dtype)
 
-        bnb_config = BitsAndBytesConfig(
+        self.bnb_config = BitsAndBytesConfig(
             load_in_4bit=use_4bit,
             bnb_4bit_quant_type=bnb_4bit_quant_type,
             bnb_4bit_compute_dtype=compute_dtype,
@@ -34,15 +35,33 @@ class LLMTrainer:
             if major >= 8:
                 logging.info("The GPU supports bfloat16: accelerate training with bf16=True.")
 
+        self._load_model(model_name)
+
+
+    def _load_model(self, model_name):
+        if hasattr(self, 'current_model_name') and self.current_model_name == model_name:
+            logging.info(
+                f"Model {model_name} is already loaded, no need to reinitialize.")
+            return
+
+        logging.info(f"Loading the model {model_name}...")
+
+        # Clear references to the old model
+        self.model = None
+        torch.cuda.empty_cache()
+
+        self.current_model_name = model_name
+
         # Load base model
         # TODO don't download from HuggingFace
         self.model = AutoModelForCausalLM.from_pretrained(
             model_name,
-            quantization_config=bnb_config,
-            device_map=device_map
+            quantization_config=self.bnb_config,
+            device_map=self.device_map
         )
-        self.model.config.use_cache = False
-        self.model.config.pretraining_tp = 1
+        # Hugging Face Transformer options
+        self.model.config.use_cache = False # Not applicable for SFT
+        self.model.config.pretraining_tp = 1 # Some kind of parallelism feature
 
         # Load LLaMA tokenizer
         # TODO don't download from HuggingFace
@@ -55,6 +74,7 @@ class LLMTrainer:
 
     def train_llm_model(
         self,
+        model_name,
         train_path,
         validation_path,
         lora_r,
@@ -78,11 +98,13 @@ class LLMTrainer:
         warmup_ratio,
         group_by_length,
         lr_scheduler_type,
-        new_model,
+        new_model_name,
         max_seq_length,
         packing,
     ):
         logging.info("Loading the training data...")
+
+        self._load_model(model_name or self.default_model_name)
 
         # Preprocessing and Data Loading
         datasets = load_dataset("json", data_files={"train": train_path, "validation": validation_path})
@@ -140,7 +162,7 @@ class LLMTrainer:
 
         logging.info("Training complete, saving the model...")
 
-        trainer.model.save_pretrained(new_model)
+        trainer.model.save_pretrained(new_model_name)
 
         # I don't think we need to do this, if we just want to save the LoRA weights
 

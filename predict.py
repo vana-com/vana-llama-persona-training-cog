@@ -41,8 +41,7 @@ class Predictor(BasePredictor):
         ),
         subject_name: str = Input(description="The name of the subject to match in whatsapp_training_files_urls."),
 
-        # Don't customize this, so we can efficiently setup/load it
-        # model_name: str = Input(description="The model to train from the Hugging Face hub.", default=model_name),
+        model_name: str = Input(description="The model to train from the Hugging Face hub.", default=model_name),
 
         lora_r: int = Input(description="LoRA attention dimension.", default=lora_r),
         lora_alpha: int = Input(description="Alpha parameter for LoRA scaling.", default=lora_alpha),
@@ -98,7 +97,8 @@ class Predictor(BasePredictor):
         train_file_name, validate_file_name, _ = processor.process_directory(TRAINING_DIR, TRAINING_DIR)
 
         params = {
-            "new_model": new_model_name,
+            "model_name": model_name,
+            "new_model_name": new_model_name,
             "train_path": f"{TRAINING_DIR}/{train_file_name}",
             "validation_path": f"{TRAINING_DIR}/{validate_file_name}",
             "lora_r": lora_r,

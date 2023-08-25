@@ -11,6 +11,11 @@ import argparse
 
 SYSTEM_PROMPT = "Complete the chat below."
 
+BLACKLISTED_PATTERNS = [
+    re.compile(r'^.*: <.* omitted>$', re.IGNORECASE),
+    re.compile(r'^.*: .* omitted$', re.IGNORECASE),
+    re.compile(r'^.*: Messages and calls are end-to-end encrypted\. No one outside of this chat, not even WhatsApp, can read or listen to them\.$', re.IGNORECASE)
+]
 
 class ChatDataProcessor:
     def __init__(self, train_split=0.9, validate_split=None, filter_speaker=None, mask=False, no_overlap=False, final_format='replicate'):
@@ -24,6 +29,11 @@ class ChatDataProcessor:
         else:
             self.validate_split = validate_split
         self.test_split = 1.0 - (self.train_split + self.validate_split)
+
+    def is_blacklisted(self, line):
+        messages = line.split('\n')
+        return any(any(pattern.fullmatch(message) for pattern in BLACKLISTED_PATTERNS) for message in messages)
+
 
     def remove_non_printable(self, text):
         text = text.replace('\r', '')
@@ -42,6 +52,11 @@ class ChatDataProcessor:
 
     def generate_jsonl_line(self, occurrence, old_timestamp_format):
         msg = ["\n".join([self.format_text(text, old_timestamp_format) for text in occurrence[i]]) for i in range(4)]
+
+        for message in msg:
+            if any(self.is_blacklisted(message) for message in msg):
+                return None
+
         prompt = f'<s>[INST] <<SYS>>\n{SYSTEM_PROMPT}\n<</SYS>>\n\n{msg[0]} [/INST] {msg[1]} </s><s>[INST] {msg[2]} [/INST]'
         completion = msg[3]
 
@@ -52,12 +67,12 @@ class ChatDataProcessor:
 
         return json.dumps(example, ensure_ascii=False)
 
-    def process_directory(self, directory_path: str, output_dir: str):
+    def process_directory(self, directory_path: str, output_dir = '.'):
         input_files = [os.path.join(directory_path, file) for file in os.listdir(
             directory_path) ] # For now, assume all files are valid # if file.endswith('.txt')]
         return self.process_files(input_files, output_dir)
 
-    def process_files(self, input_files: List[str], output_dir: str):
+    def process_files(self, input_files: List[str], output_dir = '.'):
         all_lines = []
         for input_file in input_files:
             with open(input_file, "r", encoding="utf-8") as file:
@@ -118,7 +133,9 @@ class ChatDataProcessor:
 
             if speakers[0] == speakers[2] and speakers[1] == speakers[3]:
                 occurrence = [message_bundles[i + j] for j in range(4)]
-                jsonl_lines.append(self.generate_jsonl_line(occurrence, old_timestamp_format))
+                jsonl_line = self.generate_jsonl_line(occurrence, old_timestamp_format)
+                if jsonl_line is not None:
+                    jsonl_lines.append(jsonl_line)
                 if self.no_overlap:
                     i += 4
                 else:

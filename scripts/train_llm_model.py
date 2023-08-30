@@ -53,12 +53,22 @@ class LLMTrainer:
         self.current_model_name = model_name
 
         # Load base model
-        # TODO don't download from HuggingFace
+        # Check if model exists locally first
+        local_path = f"models/{model_name.replace("/", "_")}"
+
+        if os.path.exists(local_path):
+            logging.info(f"Loading model from local path: {local_path}")
+            model_target = local_path
+        else:
+            logging.info(f"Model not found locally. Downloading from HuggingFace.")
+            model_target = model_name
+
         self.model = AutoModelForCausalLM.from_pretrained(
-            model_name,
+            model_target,
             quantization_config=self.bnb_config,
             device_map=self.device_map
         )
+
         # Hugging Face Transformer options
         self.model.config.use_cache = False # Not applicable for SFT
         self.model.config.pretraining_tp = 1 # Some kind of parallelism feature

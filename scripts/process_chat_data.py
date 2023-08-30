@@ -67,12 +67,12 @@ class ChatDataProcessor:
 
         return json.dumps(example, ensure_ascii=False)
 
-    def process_directory(self, directory_path: str, output_dir = '.'):
+    def process_directory(self, directory_path: str, output_dir: str):
         input_files = [os.path.join(directory_path, file) for file in os.listdir(
             directory_path) ] # For now, assume all files are valid # if file.endswith('.txt')]
         return self.process_files(input_files, output_dir)
 
-    def process_files(self, input_files: List[str], output_dir = '.'):
+    def process_files(self, input_files: List[str], output_dir='.'):
         all_lines = []
         for input_file in input_files:
             with open(input_file, "r", encoding="utf-8") as file:
